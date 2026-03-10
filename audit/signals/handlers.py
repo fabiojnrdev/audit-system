@@ -2,10 +2,10 @@ from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from audit.models import AuditLog
+from audit.middleware.audit_middleware import get_current_request
 
 EXCLUDED_MODELS = {
-    'AuditLog', 'LogEntry', 'Session',
-    'Migration',  # evita loop durante migrate
+    'AuditLog', 'LogEntry', 'Session', 'Migration',
 }
 
 _pre_save_cache = {}
@@ -25,11 +25,13 @@ def get_changes(old_instance, new_instance):
     return changes
 
 
-def create_audit_log(instance, action, changes=None, request=None):
+def create_audit_log(instance, action, changes=None):
     try:
+        request = get_current_request()
         content_type = ContentType.objects.get_for_model(
             instance.__class__, for_concrete_model=False
         )
+
         user = None
         ip_address = None
         user_agent = ''
@@ -50,7 +52,7 @@ def create_audit_log(instance, action, changes=None, request=None):
             user_agent=user_agent,
         )
     except Exception:
-        pass  # nunca deixar o audit quebrar a operação principal
+        pass
 
 
 def get_client_ip(request):
@@ -77,21 +79,19 @@ def handle_post_save(sender, instance, created, **kwargs):
     if sender.__name__ in EXCLUDED_MODELS:
         return
 
-    request = kwargs.get('request')
-
     if created:
         fields = {
             f.name: str(getattr(instance, f.name))
             for f in instance._meta.fields
         }
         changes = {k: {'before': None, 'after': v} for k, v in fields.items()}
-        create_audit_log(instance, AuditLog.Action.CREATE, changes, request)
+        create_audit_log(instance, AuditLog.Action.CREATE, changes)
     else:
         old_instance = _pre_save_cache.pop(instance.pk, None)
         if old_instance:
             changes = get_changes(old_instance, instance)
             if changes:
-                create_audit_log(instance, AuditLog.Action.UPDATE, changes, request)
+                create_audit_log(instance, AuditLog.Action.UPDATE, changes)
 
 
 @receiver(post_delete)
@@ -99,10 +99,9 @@ def handle_post_delete(sender, instance, **kwargs):
     if sender.__name__ in EXCLUDED_MODELS:
         return
 
-    request = kwargs.get('request')
     fields = {
         f.name: str(getattr(instance, f.name))
         for f in instance._meta.fields
     }
     changes = {k: {'before': v, 'after': None} for k, v in fields.items()}
-    create_audit_log(instance, AuditLog.Action.DELETE, changes, request)
+    create_audit_log(instance, AuditLog.Action.DELETE, changes)

@@ -25,8 +25,7 @@ class AuditLog(models.Model):
     )
     object_id = models.CharField(max_length=255, verbose_name='ID do objeto')
     content_object = GenericForeignKey('content_type', 'object_id')
-    object_repr = models.CharField(max_length=255, verbose_name='Representação do objeto')
-    
+    object_repr = models.TextField(verbose_name='Representação do objeto')    
     action = models.CharField(
         max_length=10,
         choices=Action.choices,

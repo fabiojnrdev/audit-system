@@ -1,5 +1,5 @@
 from django.db.models.signals import post_save, post_delete, pre_save
-from django.dispatch import reciever
+from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from audit.models import AuditLog
 
@@ -52,7 +52,7 @@ def get_client_ip(request):
 
 # Armazena snapshots antes de salvar para comparar depois
 _pre_save_cache = {}
-@reciever(pre_save)
+@receiver(pre_save)
 def capture_pre_save(sender,instance, **kwargs):
     if sender.__name__ in EXCLUDED_MODELS:
         return
@@ -63,4 +63,30 @@ def capture_pre_save(sender,instance, **kwargs):
     except sender.DoesNotExist:
         pass
     
-@reciever(post_save)
+@receiver(post_save)
+def handle_post_save(sender, instance, created, **kwargs):
+    if sender.__name__ in EXCLUDED_MODELS:
+        return
+
+    request = kwargs.get('request')
+    if created:
+        fields = {f.name: str(getattr(instance, f.name)) for f in instance._meta.fields}
+        changes = {k: {'before': None, 'after': v} for k, v in fields.items()}
+        create_audit_log(instance, AuditLog.Action.CREATE, changes, request)
+    else:
+        old_instance = _pre_save_cache.pop(instance.pk, None)
+        if old_instance:
+            changes = get_changes(old_instance, instance)
+            if changes:
+                create_audit_log(instance, AuditLog.Action.UPDATE, changes, request)
+
+
+@receiver(post_delete)
+def handle_post_delete(sender, instance, **kwargs):
+    if sender.__name__ in EXCLUDED_MODELS:
+        return
+
+    request = kwargs.get('request')
+    fields = {f.name: str(getattr(instance, f.name)) for f in instance._meta.fields}
+    changes = {k: {'before': v, 'after': None} for k, v in fields.items()}
+    create_audit_log(instance, AuditLog.Action.DELETE, changes, request)

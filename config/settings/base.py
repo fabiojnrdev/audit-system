@@ -22,6 +22,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'channels',
     'django_filters',
+    'corsheaders',
 ]
 
 LOCAL_APPS = [
@@ -40,6 +41,7 @@ MIDDLEWARE =[
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'audit.middleware.audit_middleware.AuditMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
@@ -104,6 +106,9 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+]
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True

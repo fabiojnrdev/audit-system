@@ -14,3 +14,13 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['object_repr', 'user__username']
     ordering_fields = ['timestamp']
     ordering = ['-timestamp']
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        qs = self.filter_queryset(self.get_queryset())
+        response.data['count_by_action'] = {
+            'CREATE': qs.filter(action='CREATE').count(),
+            'UPDATE': qs.filter(action='UPDATE').count(),
+            'DELETE': qs.filter(action='DELETE').count(),
+        }
+        return response

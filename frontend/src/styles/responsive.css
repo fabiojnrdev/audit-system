@@ -1,0 +1,39 @@
+/* Breakpoints: mobile < 640px | tablet < 1024px | desktop >= 1024px */
+
+/* Dashboard header */
+@media (max-width: 640px) {
+  .header-title { font-size: 14px !important; }
+  .header-badge { display: none !important; }
+}
+
+/* Stats grid */
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Filters */
+@media (max-width: 768px) {
+  .filters-container {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .filters-container input {
+    width: 100% !important;
+  }
+}
+
+/* EventDetail grid */
+@media (max-width: 768px) {
+  .event-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Padding geral em mobile */
+@media (max-width: 640px) {
+  .main-content {
+    padding: 16px !important;
+  }
+}

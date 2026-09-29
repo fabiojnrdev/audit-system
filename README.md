@@ -338,7 +338,7 @@ Authorization: Bearer {access_token}
   "results": [
     {
       "id": 1,
-      "user": "fabioadm",
+      "user": "adm",
       "content_type": "auth | user",
       "object_id": "3",
       "object_repr": "joao",
